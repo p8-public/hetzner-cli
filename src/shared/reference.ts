@@ -18,8 +18,8 @@ const createPreamble = (version: string) => `\
 # =================================
 # Version: ${version}
 # Binary: hctl
-# Install: npm install -g @ytspar/hctl
-# Source: https://github.com/ytspar/hetzner-cli
+# Install: npm install -g @rollupdate/hctl
+# Source: https://github.com/p8-public/hetzner-cli
 #
 # This CLI manages three Hetzner APIs:
 #   1. Robot API — dedicated server management (requires Robot web service credentials)
@@ -670,8 +670,8 @@ const POSTAMBLE = `\
 # ============================================================================
 # This package can also be imported as a Node.js/TypeScript library:
 #
-#   import { HetznerRobotClient } from '@ytspar/hctl';
-#   import { fetchAuctionData, fetchAuctionServers, filterAuctionServers, sortAuctionServers } from '@ytspar/hctl';
+#   import { HetznerRobotClient } from '@rollupdate/hctl';
+#   import { fetchAuctionData, fetchAuctionServers, filterAuctionServers, sortAuctionServers } from '@rollupdate/hctl';
 #
 # Robot Client:
 #   const client = new HetznerRobotClient(username, password);

@@ -33,12 +33,12 @@ titleText.appendChild(demoBadge);
 const titleLinks = document.createElement("div");
 titleLinks.className = "title-bar-links";
 const ghLink = document.createElement("a");
-ghLink.href = "https://github.com/ytspar/hetzner-cli";
+ghLink.href = "https://github.com/p8-public/hetzner-cli";
 ghLink.target = "_blank";
 ghLink.rel = "noopener";
 ghLink.textContent = "GitHub";
 const npmLink = document.createElement("a");
-npmLink.href = "https://www.npmjs.com/package/@ytspar/hctl";
+npmLink.href = "https://www.npmjs.com/package/@rollupdate/hctl";
 npmLink.target = "_blank";
 npmLink.rel = "noopener";
 npmLink.textContent = "npm";
@@ -124,12 +124,12 @@ function tmuxBadge(label: string, value: string, href?: string): HTMLElement {
 const badgeVersion = tmuxBadge(
   "version",
   `v${HCTL_VERSION}`,
-  "https://www.npmjs.com/package/@ytspar/hctl"
+  "https://www.npmjs.com/package/@rollupdate/hctl"
 );
 const badgeLicense = tmuxBadge(
   "license",
   "MIT",
-  "https://github.com/ytspar/hetzner-cli/blob/main/LICENSE"
+  "https://github.com/p8-public/hetzner-cli/blob/main/LICENSE"
 );
 const badgeNode = tmuxBadge("node", ">=20.17");
 
@@ -147,13 +147,13 @@ tmuxRight.className = "tmux-right";
 
 const installBtn = document.createElement("span");
 installBtn.className = "tmux-install";
-installBtn.textContent = "npm i -g @ytspar/hctl";
+installBtn.textContent = "npm i -g @rollupdate/hctl";
 installBtn.title = "Click to copy";
 installBtn.addEventListener("click", () => {
-  navigator.clipboard.writeText("npm install -g @ytspar/hctl");
+  navigator.clipboard.writeText("npm install -g @rollupdate/hctl");
   installBtn.textContent = "copied!";
   setTimeout(() => {
-    installBtn.textContent = "npm i -g @ytspar/hctl";
+    installBtn.textContent = "npm i -g @rollupdate/hctl";
   }, 1500);
 });
 

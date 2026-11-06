@@ -4,10 +4,10 @@
 
 # hctl
 
-[![npm version](https://badge.fury.io/js/%40ytspar%2Fhctl.svg)](https://www.npmjs.com/package/@ytspar/hctl)
+[![npm version](https://badge.fury.io/js/%40rollupdate%2Fhctl.svg)](https://www.npmjs.com/package/@rollupdate/hctl)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**[Website](https://hctl.dev/)** · **[npm](https://www.npmjs.com/package/@ytspar/hctl)** · **[GitHub](https://github.com/ytspar/hetzner-cli)**
+**[Website](https://hctl.dev/)** · **[npm](https://www.npmjs.com/package/@rollupdate/hctl)** · **[GitHub](https://github.com/p8-public/hetzner-cli)**
 
 Unified CLI and Node.js library for Hetzner's three APIs:
 
@@ -54,8 +54,8 @@ Hetzner maintains an official Cloud CLI called [`hcloud`](https://github.com/het
 |---|---|---|
 | **API coverage** | Cloud only | Cloud + Robot + Server Auction |
 | **Language** | Go (single binary) | TypeScript / Node.js |
-| **Install** | Homebrew, apt, binary download | `npm install -g @ytspar/hctl` |
-| **Library usage** | CLI only | Also usable as a Node.js library (`import { HetznerRobotClient } from '@ytspar/hctl'`) |
+| **Install** | Homebrew, apt, binary download | `npm install -g @rollupdate/hctl` |
+| **Library usage** | CLI only | Also usable as a Node.js library (`import { HetznerRobotClient } from '@rollupdate/hctl'`) |
 | **Interactive mode** | No | Yes (`hctl interactive`) |
 | **LLM reference** | No | Yes (`hctl reference` — structured output for LLM context) |
 
@@ -69,10 +69,10 @@ Hetzner maintains an official Cloud CLI called [`hcloud`](https://github.com/het
 
 ```bash
 # Global CLI
-npm install -g @ytspar/hctl
+npm install -g @rollupdate/hctl
 
 # Or as a project dependency
-npm install @ytspar/hctl
+npm install @rollupdate/hctl
 ```
 
 Requires Node.js 20.17+, 22.13+, or 23.5+.
@@ -590,7 +590,7 @@ hctl reference > /tmp/hctl-ref.txt         # Save to file
 ### Robot Client
 
 ```typescript
-import { HetznerRobotClient } from '@ytspar/hctl';
+import { HetznerRobotClient } from '@rollupdate/hctl';
 
 const client = new HetznerRobotClient('username', 'password');
 
@@ -630,7 +630,7 @@ await client.updateFirewall(123456, 'active');
 ### Cloud Client
 
 ```typescript
-import { HetznerCloudClient } from '@ytspar/hctl';
+import { HetznerCloudClient } from '@rollupdate/hctl';
 
 const client = new HetznerCloudClient('hcloud_xxxxxx');
 
@@ -671,7 +671,7 @@ import {
   filterAuctionServers,
   getAuctionDataUrl,
   sortAuctionServers,
-} from '@ytspar/hctl';
+} from '@rollupdate/hctl';
 
 // Fetch all servers from the hosted 15-minute cache (EUR pricing)
 const { server: servers } = await fetchAuctionServers('EUR');
@@ -724,7 +724,7 @@ import type {
   // Auction types
   AuctionServer, AuctionDiskData, AuctionIpPrice,
   AuctionFilterOptions, AuctionResponse,
-} from '@ytspar/hctl';
+} from '@rollupdate/hctl';
 ```
 
 ---

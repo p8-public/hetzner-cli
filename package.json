@@ -1,6 +1,6 @@
 {
-  "name": "@ytspar/hctl",
-  "version": "2.6.0",
+  "name": "@rollupdate/hctl",
+  "version": "3.0.0",
   "description": "Unified CLI and Node.js library for Hetzner Robot API, Cloud API, and server auction",
   "type": "module",
   "main": "./dist/index.js",
@@ -86,10 +86,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ytspar/hetzner-cli.git"
+    "url": "git+https://github.com/p8-public/hetzner-cli.git"
   },
   "bugs": {
-    "url": "https://github.com/ytspar/hetzner-cli/issues"
+    "url": "https://github.com/p8-public/hetzner-cli/issues"
   },
   "homepage": "https://hctl.dev/",
   "dependencies": {
@@ -117,6 +117,9 @@
   },
   "engines": {
     "node": "^20.17.0 || ^22.13.0 || >=23.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "allowScripts": {
     "better-sqlite3@12.11.1": true,

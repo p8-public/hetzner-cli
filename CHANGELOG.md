@@ -1,5 +1,38 @@
 # Changelog
 
+## [3.0.0] - 2026-11-06
+
+First release under the `@rollupdate/hctl` name. The previous package name was
+`@ytspar/hctl`.
+
+### Breaking
+
+- Require Node.js `^20.17.0 || ^22.13.0 || >=23.5.0`; Node 18 is no longer
+  supported.
+- Remove `--datacenter` from `cloud server create` and
+  `cloud primary-ip create`, because the Hetzner Cloud API no longer accepts it.
+  Use `--location` instead.
+- Remove `datacenter` from the `createServer` and `createPrimaryIp` library
+  options, and replace `PrimaryIp.datacenter` with `location`.
+- `listVSwitches`, `getVSwitch` and `createVSwitch` now return flat objects that
+  match the Robot API. `updateVSwitch` and `addServerToVSwitch` return `void`.
+- `vswitch list` no longer shows Servers and Subnets columns, because the list
+  endpoint does not return them. Use `vswitch get <id>`.
+- `-u`, `-p`, `--token` and `--json` now take effect, so `-u`/`-p` override
+  stored credentials instead of being ignored.
+
+### Added
+
+- Add `--location` to `cloud primary-ip create`.
+
+### Fixed
+
+- Fix crashes in `vswitch list`, `vswitch get` and `vswitch create`.
+- Fix crashes in `cloud primary-ip list` and `describe` after Hetzner removed
+  the `datacenter` field.
+- Make `--json` work on all Robot, Cloud and auction commands, and keep status
+  messages off stdout in JSON mode.
+
 ## [2.5.0] - 2026-05-06
 
 ### Added
