@@ -75,7 +75,7 @@ npm install -g @ytspar/hctl
 npm install @ytspar/hctl
 ```
 
-Requires Node.js >= 18.0.0.
+Requires Node.js 20.17+, 22.13+, or 23.5+.
 
 ---
 

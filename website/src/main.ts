@@ -131,7 +131,7 @@ const badgeLicense = tmuxBadge(
   "MIT",
   "https://github.com/ytspar/hetzner-cli/blob/main/LICENSE"
 );
-const badgeNode = tmuxBadge("node", ">=18");
+const badgeNode = tmuxBadge("node", ">=20.17");
 
 tmuxLeft.append(
   tmuxSession,
