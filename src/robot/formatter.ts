@@ -33,6 +33,7 @@ import type {
   Traffic,
   VSwitch,
   VSwitchSummary,
+  VSwitchWithServerNames,
   Wol,
 } from "./types.js";
 
@@ -513,6 +514,48 @@ export function formatVSwitchList(vswitches: VSwitchSummary[]): string {
       vswitch.vlan.toString(),
       vswitch.cancelled ? colorize("Yes", "red") : "No",
     ]);
+  }
+
+  return table.toString();
+}
+
+export function formatVSwitchServers(
+  vswitches: VSwitchWithServerNames[]
+): string {
+  if (vswitches.length === 0) {
+    return info("No vSwitches found.");
+  }
+
+  const table = createTable([
+    "vSwitch",
+    "Name",
+    "VLAN",
+    "Cancelled",
+    "Server IP",
+    "Server #",
+    "Server Name",
+    "Status",
+  ]);
+
+  for (const vswitch of vswitches) {
+    const identity = [
+      vswitch.id.toString(),
+      vswitch.name,
+      vswitch.vlan.toString(),
+      vswitch.cancelled ? colorize("Yes", "red") : "No",
+    ];
+    if (vswitch.server.length === 0) {
+      table.push([...identity, "-", "-", "-", "-"]);
+    }
+    for (const srv of vswitch.server) {
+      table.push([
+        ...identity,
+        srv.server_ip,
+        srv.server_number.toString(),
+        srv.server_name ?? "-",
+        formatStatus(srv.status),
+      ]);
+    }
   }
 
   return table.toString();

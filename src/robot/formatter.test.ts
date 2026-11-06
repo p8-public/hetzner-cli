@@ -42,6 +42,7 @@ import {
   formatTransactionList,
   formatVSwitchDetails,
   formatVSwitchList,
+  formatVSwitchServers,
   formatWolResult,
 } from "./formatter.js";
 
@@ -662,6 +663,78 @@ describe("Formatter Module", () => {
       expect(result).toContain("1");
       expect(result).toContain("my-vswitch");
       expect(result).toContain("4000");
+    });
+  });
+
+  describe("formatVSwitchServers", () => {
+    const base = {
+      id: 4321,
+      name: "my vSwitch",
+      vlan: 4000,
+      cancelled: false,
+      subnet: [],
+      cloud_network: [],
+    };
+    const server = (
+      serverNumber: number,
+      ip: string,
+      serverName: string | null
+    ) => ({
+      server_ip: ip,
+      server_ipv6_net: "2a01:4f8:111:4221::",
+      server_name: serverName,
+      server_number: serverNumber,
+      status: "ready" as const,
+    });
+    const row = (output: string, text: string) =>
+      output.split("\n").find((line) => line.includes(text)) ?? "";
+
+    it("should report when there are no vSwitches", () => {
+      expect(formatVSwitchServers([])).toContain("No vSwitches found");
+    });
+
+    it("should print one row per attached server with its name", () => {
+      const result = formatVSwitchServers([
+        {
+          ...base,
+          server: [
+            server(321, "123.123.123.123", "web1"),
+            server(421, "123.123.123.124", "db1"),
+          ],
+        },
+      ]);
+
+      expect(result).toContain("Server Name");
+      expect(row(result, "123.123.123.123")).toContain("web1");
+      expect(row(result, "123.123.123.124")).toContain("db1");
+      expect(row(result, "123.123.123.124")).toContain("421");
+    });
+
+    it("should show a dash for a server without a name", () => {
+      const result = formatVSwitchServers([
+        { ...base, server: [server(321, "123.123.123.123", null)] },
+      ]);
+
+      expect(row(result, "123.123.123.123")).toContain(" - ");
+    });
+
+    it("should mark cancelled vSwitches", () => {
+      const result = formatVSwitchServers([
+        { ...base, cancelled: true, id: 1, name: "gone", server: [] },
+        { ...base, id: 2, name: "active", server: [] },
+      ]);
+
+      expect(result).toContain("Cancelled");
+      expect(row(result, "gone")).toContain("Yes");
+      expect(row(result, "active")).toContain("No");
+    });
+
+    it("should keep vSwitches without servers in the output", () => {
+      const result = formatVSwitchServers([
+        { ...base, id: 1234, name: "empty switch", server: [] },
+      ]);
+
+      expect(row(result, "empty switch")).toContain(" - ");
     });
   });
 

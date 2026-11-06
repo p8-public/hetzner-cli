@@ -236,6 +236,14 @@ export interface VSwitchServer {
   status: "ready" | "in process" | "failed";
 }
 
+export interface NamedVSwitchServer extends VSwitchServer {
+  server_name: string | null;
+}
+
+export type VSwitchWithServerNames = Omit<VSwitch, "server"> & {
+  server: NamedVSwitchServer[];
+};
+
 export interface VSwitchSubnet {
   gateway: string;
   ip: string;

@@ -33,6 +33,7 @@ import type {
   VncConfig,
   VSwitch,
   VSwitchSummary,
+  VSwitchWithServerNames,
   WindowsConfig,
   Wol,
 } from "./types.js";
@@ -754,6 +755,39 @@ export class HetznerRobotClient {
 
   async getVSwitch(id: number): Promise<VSwitch> {
     return await this.request<VSwitch>(`/vswitch/${id}`);
+  }
+
+  /**
+   * Fetch full details for every vSwitch. The list endpoint omits servers, so
+   * this makes one extra request per vSwitch.
+   */
+  async listVSwitchesWithServers(): Promise<VSwitch[]> {
+    const vswitches = await this.listVSwitches();
+    return await Promise.all(vswitches.map(({ id }) => this.getVSwitch(id)));
+  }
+
+  /**
+   * Add server names, which vSwitch responses do not include. Costs one server
+   * list request, skipped when no server is attached.
+   */
+  async addVSwitchServerNames(
+    vswitches: VSwitch[]
+  ): Promise<VSwitchWithServerNames[]> {
+    const hasServers = vswitches.some(({ server }) => server.length > 0);
+    const servers = hasServers ? await this.listServers() : [];
+    const names = new Map(
+      servers
+        .filter(({ server }) => server.server_name.length > 0)
+        .map(({ server }) => [server.server_number, server.server_name])
+    );
+
+    return vswitches.map((vswitch) => ({
+      ...vswitch,
+      server: vswitch.server.map((srv) => ({
+        ...srv,
+        server_name: names.get(srv.server_number) ?? null,
+      })),
+    }));
   }
 
   async createVSwitch(name: string, vlan: number): Promise<VSwitch> {

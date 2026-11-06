@@ -21,6 +21,7 @@ export type {
   IP,
   LinuxConfig,
   Mac,
+  NamedVSwitchServer,
   PleskConfig,
   ProductPrice,
   Rdns,
@@ -48,6 +49,7 @@ export type {
   VSwitchServer,
   VSwitchSubnet,
   VSwitchSummary,
+  VSwitchWithServerNames,
   WindowsConfig,
   Wol,
 } from "./robot/types.js";

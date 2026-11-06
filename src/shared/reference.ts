@@ -191,6 +191,7 @@ hctl firewall template delete <id>      # Delete template (alias: rm)
 # --- vswitch: vSwitch Management ---
 hctl vswitch list                       # List all vSwitches (alias: ls)
 hctl vswitch get <id>                   # Get vSwitch details (alias: show)
+hctl vswitch servers [id]               # List servers on all vSwitches, or one (one API request per vSwitch, plus one for names)
 hctl vswitch create <name> <vlan>       # Create a new vSwitch
 hctl vswitch update <id>                # Update vSwitch
   -n, --name <name>                        #   New name

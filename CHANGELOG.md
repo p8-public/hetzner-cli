@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [3.1.0] - 2026-11-06
+
+### Added
+
+- Add `vswitch servers [id]` to list the servers attached to every vSwitch, or
+  to one vSwitch, with server names and a cancelled marker. Add
+  `listVSwitchesWithServers()` and `addVSwitchServerNames()` to the library.
 
 ### Changed
 

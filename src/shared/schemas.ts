@@ -280,7 +280,15 @@ interface VSwitch {
   cloud_network: VSwitchCloudNetwork[];
 }
 
-type VSwitchSummary = Pick<VSwitch, 'id' | 'name' | 'vlan' | 'cancelled'>;`;
+type VSwitchSummary = Pick<VSwitch, 'id' | 'name' | 'vlan' | 'cancelled'>;
+
+interface NamedVSwitchServer extends VSwitchServer {
+  server_name: string | null;
+}
+
+type VSwitchWithServerNames = Omit<VSwitch, 'server'> & {
+  server: NamedVSwitchServer[];
+};`;
 
 const ROBOT_STORAGEBOX = `\
 interface StorageBox {
@@ -1012,6 +1020,7 @@ export const outputSchemas: Record<string, string> = {
   // --- vswitch ---
   "vswitch list": `${ROBOT_VSWITCH}\n\ntype Output = VSwitchSummary[];`,
   "vswitch get": `${ROBOT_VSWITCH}\n\ntype Output = VSwitch;`,
+  "vswitch servers": `${ROBOT_VSWITCH}\n\ntype Output = VSwitchWithServerNames[];`,
 
   // --- storagebox ---
   "storagebox list": `${ROBOT_STORAGEBOX}\n\ntype Output = { storagebox: StorageBox }[];`,

@@ -6,7 +6,20 @@ import {
   confirmAction,
   output,
 } from "../../shared/helpers.js";
-import { formatVSwitchDetails, formatVSwitchList } from "../formatter.js";
+import {
+  formatVSwitchDetails,
+  formatVSwitchList,
+  formatVSwitchServers,
+} from "../formatter.js";
+
+const DIGITS_ONLY_REGEX = /^\d+$/;
+
+function parseVSwitchId(value: string): number {
+  if (!DIGITS_ONLY_REGEX.test(value)) {
+    throw new Error(`Invalid vSwitch ID: ${value}`);
+  }
+  return Number.parseInt(value, 10);
+}
 
 export function registerVSwitchCommands(parent: Command): void {
   const vswitch = parent.command("vswitch").description("vSwitch management");
@@ -31,6 +44,29 @@ export function registerVSwitchCommands(parent: Command): void {
         const vs = await client.getVSwitch(Number.parseInt(vswitchId, 10));
         output(vs, formatVSwitchDetails, options);
       })
+    );
+
+  vswitch
+    .command("servers [id]")
+    .description("List servers attached to all vSwitches, or to one vSwitch")
+    .action(
+      asyncAction(
+        async (
+          client,
+          vswitchId: string | undefined,
+          options: ActionOptions
+        ) => {
+          const vswitches =
+            vswitchId === undefined
+              ? await client.listVSwitchesWithServers()
+              : [await client.getVSwitch(parseVSwitchId(vswitchId))];
+          output(
+            await client.addVSwitchServerNames(vswitches),
+            formatVSwitchServers,
+            options
+          );
+        }
+      )
     );
 
   vswitch

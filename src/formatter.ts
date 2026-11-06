@@ -36,6 +36,7 @@ export {
   formatTransactionList,
   formatVSwitchDetails,
   formatVSwitchList,
+  formatVSwitchServers,
   formatWolResult,
 } from "./robot/formatter.js";
 export {

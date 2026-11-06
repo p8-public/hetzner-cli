@@ -5,7 +5,7 @@ const OUTPUT_TYPE_ARRAY_REGEX = /type Output = .+\[\];/;
 
 describe("outputSchemas", () => {
   it("has the expected number of entries", () => {
-    expect(Object.keys(outputSchemas).length).toBe(68);
+    expect(Object.keys(outputSchemas).length).toBe(69);
   });
 
   it('every entry contains a "type Output" declaration', () => {
@@ -49,6 +49,7 @@ describe("outputSchemas", () => {
       "firewall template get",
       "vswitch list",
       "vswitch get",
+      "vswitch servers",
       "storagebox list",
       "storagebox get",
       "storagebox snapshot list",

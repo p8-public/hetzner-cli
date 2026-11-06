@@ -898,6 +898,126 @@ describe("HetznerRobotClient", () => {
       expect(result).toEqual(mockVSwitches);
     });
 
+    it("should fetch details for every vSwitch", async () => {
+      const details = [
+        {
+          id: 1234,
+          name: "vswitch 1234",
+          vlan: 4000,
+          cancelled: false,
+          server: [],
+          subnet: [],
+          cloud_network: [],
+        },
+        {
+          id: 4321,
+          name: "my vSwitch",
+          vlan: 4001,
+          cancelled: false,
+          server: [
+            {
+              server_ip: "123.123.123.123",
+              server_ipv6_net: "2a01:4f8:111:4221::",
+              server_number: 321,
+              status: "ready",
+            },
+          ],
+          subnet: [],
+          cloud_network: [],
+        },
+      ];
+      const jsonBody = (body: unknown) => ({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(JSON.stringify(body)),
+      });
+      mockFetch.mockImplementation((url: string) => {
+        if (url.endsWith("/vswitch")) {
+          return Promise.resolve(
+            jsonBody(
+              details.map(({ id, name, vlan, cancelled }) => ({
+                id,
+                name,
+                vlan,
+                cancelled,
+              }))
+            )
+          );
+        }
+        const id = Number(url.split("/").at(-1));
+        return Promise.resolve(jsonBody(details.find((d) => d.id === id)));
+      });
+
+      const result = await client.listVSwitchesWithServers();
+
+      expect(result).toEqual(details);
+      expect(mockFetch).toHaveBeenCalledTimes(details.length + 1);
+    });
+
+    describe("addVSwitchServerNames", () => {
+      const attached = (serverNumber: number) => ({
+        server_ip: "123.123.123.123",
+        server_ipv6_net: "2a01:4f8:111:4221::",
+        server_number: serverNumber,
+        status: "ready" as const,
+      });
+      const vswitch = (server: ReturnType<typeof attached>[]) => ({
+        id: 4321,
+        name: "my vSwitch",
+        vlan: 4000,
+        cancelled: false,
+        server,
+        subnet: [],
+        cloud_network: [],
+      });
+
+      it("should match names by server number", async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          text: () =>
+            Promise.resolve(
+              JSON.stringify([
+                { server: { server_number: 321, server_name: "web1" } },
+                { server: { server_number: 421, server_name: "" } },
+              ])
+            ),
+        });
+
+        const [result] = await client.addVSwitchServerNames([
+          vswitch([attached(321), attached(421), attached(521)]),
+        ]);
+
+        expect(result.server.map((srv) => srv.server_name)).toEqual([
+          "web1",
+          null,
+          null,
+        ]);
+        expect(mockFetch).toHaveBeenCalledWith(
+          "https://robot-ws.your-server.de/server",
+          expect.any(Object)
+        );
+      });
+
+      it("should skip the server list when nothing is attached", async () => {
+        const result = await client.addVSwitchServerNames([vswitch([])]);
+
+        expect(result[0].server).toEqual([]);
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
+    });
+
+    it("should make no detail requests without vSwitches", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve("[]"),
+      });
+
+      await expect(client.listVSwitchesWithServers()).resolves.toEqual([]);
+      expect(mockFetch).toHaveBeenCalledOnce();
+    });
+
     it("should create vSwitch", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,

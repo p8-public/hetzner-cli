@@ -103,6 +103,8 @@ export type {
   IP,
   LinuxConfig,
   Mac,
+  // vSwitch
+  NamedVSwitchServer,
   PleskConfig,
   ProductPrice,
   // Reverse DNS
@@ -133,12 +135,12 @@ export type {
   Traffic,
   TrafficData,
   VncConfig,
-  // vSwitch
   VSwitch,
   VSwitchCloudNetwork,
   VSwitchServer,
   VSwitchSubnet,
   VSwitchSummary,
+  VSwitchWithServerNames,
   WindowsConfig,
   // Wake on LAN
   Wol,

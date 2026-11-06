@@ -322,6 +322,7 @@ hctl firewall template get|delete <id>
 ```bash
 hctl vswitch list
 hctl vswitch get <id>
+hctl vswitch servers [id]
 hctl vswitch create <name> <vlan>
 hctl vswitch update <id> [-n <name>] [-v <vlan>]
 hctl vswitch delete <id> [-y] [--date <YYYY-MM-DD>]
@@ -815,6 +816,8 @@ import type {
 |--------|-------------|
 | `listVSwitches()` | List vSwitches |
 | `getVSwitch(id)` | Get details |
+| `listVSwitchesWithServers()` | Get details for every vSwitch, including servers |
+| `addVSwitchServerNames(vswitches)` | Add server names to vSwitch details |
 | `createVSwitch(name, vlan)` | Create |
 | `updateVSwitch(id, name?, vlan?)` | Update |
 | `deleteVSwitch(id, date?)` | Delete |
