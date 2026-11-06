@@ -382,8 +382,10 @@ hctl cloud context active
 
 `hctl cloud context bootstrap` is an explicit opt-in assisted browser flow. It
 opens a visible local real-browser session so you can log in to the Hetzner Cloud
-Console yourself, including 2FA. `hctl` does not ask for or store your console
-password and does not scrape the one-time API token from the page. After Hetzner
+Console yourself, including 2FA. `hctl` attaches to the browser only after you
+press Enter, so no automation runs during login. It does not ask for or store
+your console password and does not scrape the one-time API token from the page.
+After Hetzner
 prepares the token form, `hctl` asks for confirmation again before generating
 the credential. Copy the resulting token yourself and paste it into the hidden
 CLI prompt. The token is then validated and saved as a normal `hctl` cloud

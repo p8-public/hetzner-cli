@@ -1,5 +1,19 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Replace `puppeteer-real-browser` with `chrome-launcher` and `playwright-core`
+  for `cloud context bootstrap`. Automation now attaches only after you log in,
+  and Cloudflare Turnstile checks are no longer clicked automatically; complete
+  any check yourself in the browser.
+
+### Security
+
+- Remove the dependency chain behind the high-severity audit findings that
+  affected npm installs.
+
 ## [3.0.0] - 2026-11-06
 
 First release under the `@rollupdate/hctl` name. The previous package name was

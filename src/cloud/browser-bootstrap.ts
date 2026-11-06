@@ -7,12 +7,10 @@ import {
 } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { confirm, input, password } from "@inquirer/prompts";
-import { Launcher } from "chrome-launcher";
-import { connect } from "puppeteer-real-browser";
+import { Launcher, launch, type Options } from "chrome-launcher";
+import type { Browser, Page } from "playwright-core";
 import { createContext, validateCloudToken } from "./context.js";
 import { HETZNER_CLOUD_CONSOLE_URL } from "./token-instructions.js";
-
-type Page = Awaited<ReturnType<typeof connect>>["page"];
 
 export type CloudTokenPermission = "read" | "read-write";
 
@@ -36,6 +34,7 @@ const READ_PERMISSION_SELECTOR = '[data-test="radio-item--read"]';
 const READ_WRITE_PERMISSION_SELECTOR = '[data-test="radio-item--read_write"]';
 const SELECT_ALL_MODIFIER = process.platform === "darwin" ? "Meta" : "Control";
 const DISABLE_FEATURES_FLAG = "--disable-features=";
+const ELEMENT_TIMEOUT_MS = 15_000;
 
 function sandboxedChromeFlags(): string[] {
   const flags = Launcher.defaultFlags()
@@ -98,30 +97,76 @@ export function writeEnvToken(envFile: string, token: string): void {
   chmodSync(envFile, 0o600);
 }
 
-export function browserConnectionOptions(): Parameters<typeof connect>[0] {
+export function chromeLaunchOptions(
+  startingUrl: string,
+  extraFlags: string[] = []
+): Options {
   return {
-    args: [
+    chromeFlags: [
       ...sandboxedChromeFlags(),
       "--start-maximized",
       "--disable-dev-shm-usage",
+      ...extraFlags,
     ],
-    connectOption: {
-      defaultViewport: null,
-    },
-    headless: false,
-    // puppeteer-real-browser otherwise injects --no-sandbox.
-    ignoreAllFlags: true,
-    turnstile: true,
+    // The defaults are already filtered into the flags above.
+    ignoreDefaultFlags: true,
+    startingUrl,
   };
 }
 
-interface BrowserHandle {
+export interface ConsoleBrowserSession {
+  attach: () => Promise<Page>;
   close: () => Promise<void>;
 }
 
-interface BrowserSession {
-  browser: BrowserHandle;
-  page: Page;
+function findConsolePage(browser: Browser, consoleUrl: string): Page {
+  const { origin } = new URL(consoleUrl);
+  const pages = browser.contexts().flatMap((context) => context.pages());
+  const page =
+    pages.filter((candidate) => candidate.url().startsWith(origin)).at(-1) ??
+    pages.at(-1);
+  if (!page) {
+    throw new Error("No browser tab is open. Rerun the bootstrap to continue.");
+  }
+  return page;
+}
+
+/**
+ * Open Chrome without any automation attached. The user logs in to an ordinary
+ * browser session; `attach` connects only once they ask hctl to continue.
+ */
+export async function launchConsoleBrowser(
+  consoleUrl: string,
+  extraFlags: string[] = []
+): Promise<ConsoleBrowserSession> {
+  const chrome = await launch(chromeLaunchOptions(consoleUrl, extraFlags));
+  let browser: Browser | null = null;
+
+  return {
+    attach: async () => {
+      try {
+        // Loaded here so other commands do not pay for it at startup.
+        const { chromium } = await import("playwright-core");
+        browser = await chromium.connectOverCDP(
+          `http://127.0.0.1:${chrome.port}`
+        );
+      } catch (error) {
+        throw new Error(
+          "Could not connect to the browser. Keep the window open until setup finishes.",
+          { cause: error }
+        );
+      }
+      return findConsolePage(browser, consoleUrl);
+    },
+    close: async () => {
+      try {
+        // Only disconnects: a browser attached over CDP keeps running.
+        await browser?.close();
+      } finally {
+        chrome.kill();
+      }
+    },
+  };
 }
 
 async function delay(ms: number): Promise<void> {
@@ -189,13 +234,14 @@ async function clickVisibleSelector(
 ): Promise<boolean> {
   try {
     const element = await page.waitForSelector(selector, {
-      timeout: 15_000,
-      visible: true,
+      state: "visible",
+      timeout: ELEMENT_TIMEOUT_MS,
     });
     if (!element) {
       return false;
     }
-    await element.click();
+    // Styled controls can cover their own input, which fails actionability.
+    await element.click({ force: true, timeout: ELEMENT_TIMEOUT_MS });
     return true;
   } catch {
     return false;
@@ -457,7 +503,10 @@ async function openApiTokenForm(
   await delay(1000);
 
   const inputReady = await page
-    .waitForSelector(DIALOG_INPUT_SELECTOR, { timeout: 15_000, visible: true })
+    .waitForSelector(DIALOG_INPUT_SELECTOR, {
+      state: "visible",
+      timeout: ELEMENT_TIMEOUT_MS,
+    })
     .then(Boolean)
     .catch(() => false);
   const filledTokenName =
@@ -478,7 +527,7 @@ async function openApiTokenForm(
   }
 }
 
-async function submitApiTokenForm(page: Page): Promise<void> {
+export async function submitApiTokenForm(page: Page): Promise<void> {
   const clickedFinalGenerate = await clickVisibleText(page, [
     "generate api token",
   ]);
@@ -488,7 +537,7 @@ async function submitApiTokenForm(page: Page): Promise<void> {
   await delay(1500);
 }
 
-async function automateTokenSetup(
+export async function automateTokenSetup(
   page: Page,
   options: CloudTokenBootstrapOptions,
   tokenName: string
@@ -501,19 +550,21 @@ async function automateTokenSetup(
   await openApiTokenForm(page, tokenName, options.permission);
 }
 
-async function openConsole(projectName: string): Promise<BrowserSession> {
-  const { browser, page } = await connect(browserConnectionOptions());
-  await page.goto(HETZNER_CLOUD_CONSOLE_URL, { waitUntil: "domcontentloaded" });
+async function openConsole(
+  projectName: string
+): Promise<ConsoleBrowserSession> {
+  const session = await launchConsoleBrowser(HETZNER_CLOUD_CONSOLE_URL);
 
   console.log("");
   console.log("A local real-browser session is open.");
   console.log("Use the browser to log in to Hetzner Cloud, including 2FA.");
+  console.log("hctl does not control the browser until you press Enter.");
   console.log(`After login, hctl will prepare project '${projectName}'.`);
   console.log("");
   console.log(
     "Leave the browser open until you have copied the generated token."
   );
-  return { browser, page };
+  return session;
 }
 
 export async function runCloudTokenBootstrap(
@@ -558,7 +609,7 @@ export async function runCloudTokenBootstrap(
     return false;
   }
 
-  const { browser, page } = await openConsole(options.projectName);
+  const session = await openConsole(options.projectName);
 
   try {
     await input({
@@ -566,6 +617,7 @@ export async function runCloudTokenBootstrap(
         "After logging in to Hetzner Cloud in the browser, press Enter to automate project/token setup.",
     });
 
+    const page = await session.attach();
     console.log("Automating Hetzner Console setup...");
     await automateTokenSetup(page, options, tokenName);
     console.log("");
@@ -614,6 +666,6 @@ export async function runCloudTokenBootstrap(
     }
     return true;
   } finally {
-    await browser.close();
+    await session.close();
   }
 }

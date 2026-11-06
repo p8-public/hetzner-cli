@@ -100,7 +100,7 @@
     "commander": "^14.0.3",
     "dotenv": "^18.0.9",
     "keytar": "^7.9.0",
-    "puppeteer-real-browser": "^1.4.4"
+    "playwright-core": "^1.65.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.4",
@@ -124,10 +124,6 @@
   "allowScripts": {
     "better-sqlite3@12.11.1": true,
     "fsevents@2.3.3": true,
-    "keytar@7.9.0": true,
-    "sleep@6.1.0": true
-  },
-  "overrides": {
-    "rebrowser-puppeteer-core": "^25.16.0"
+    "keytar@7.9.0": true
   }
 }
