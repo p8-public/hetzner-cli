@@ -34,76 +34,77 @@ import type {
  * costing — their price is contract-specific and not exposed via any API.
  */
 
+function primaryIpAssignee(ip: PrimaryIp): string | null {
+  if (ip.assignee_type === "server") {
+    return `server ${ip.assignee_id}`;
+  }
+  if (ip.assignee_type === "load_balancer") {
+    return `load balancer ${ip.assignee_id}`;
+  }
+  return null;
+}
+
 export interface InventoryServerEntry {
-  id: number;
-  name: string;
-  type: string | null;
-  location: string;
-  status: string;
+  backup: boolean;
   created: string;
+  id: number;
   ipv4: string | null;
   ipv6: string | null;
-  primaryDiskGb: number;
-  volumes: number;
-  volumeGb: number;
-  backup: boolean;
+  location: string;
   monthly: number | null;
+  name: string;
+  primaryDiskGb: number;
+  status: string;
+  type: string | null;
+  volumeGb: number;
+  volumes: number;
   warnings: string[];
 }
 
 export interface InventoryVolumeEntry {
+  attachedTo: number | null;
   id: number;
+  location: string;
+  monthly: number | null;
   name: string;
   sizeGb: number;
-  location: string;
   status: string;
-  attachedTo: number | null;
-  monthly: number | null;
   warnings: string[];
 }
 
 export interface InventoryIpEntry {
-  id: number;
-  kind: "primary" | "floating";
-  type: "ipv4" | "ipv6";
-  ip: string;
-  location: string;
   assignedTo: string | null;
+  id: number;
+  ip: string;
+  kind: "primary" | "floating";
+  location: string;
   monthly: number | null;
+  type: "ipv4" | "ipv6";
   warnings: string[];
 }
 
 export interface InventoryLoadBalancerEntry {
   id: number;
-  name: string;
-  type: string | null;
   location: string;
+  monthly: number | null;
+  name: string;
   publicIpv4: string | null;
   targets: number;
-  monthly: number | null;
+  type: string | null;
   warnings: string[];
 }
 
 export interface InventoryImageEntry {
-  id: number;
-  name: string | null;
-  type: string;
-  sizeGb: number;
   boundTo: number | null;
+  id: number;
   monthly: number | null;
+  name: string | null;
+  sizeGb: number;
+  type: string;
   warnings: string[];
 }
 
 export interface InventoryReport {
-  generatedAt: string;
-  currency: string;
-  vatRate: string;
-  note: string;
-  servers: InventoryServerEntry[];
-  volumes: InventoryVolumeEntry[];
-  ips: InventoryIpEntry[];
-  loadBalancers: InventoryLoadBalancerEntry[];
-  images: InventoryImageEntry[];
   counts: {
     networks: number;
     firewalls: number;
@@ -111,6 +112,13 @@ export interface InventoryReport {
     sshKeys: number;
     placementGroups: number;
   };
+  currency: string;
+  generatedAt: string;
+  images: InventoryImageEntry[];
+  ips: InventoryIpEntry[];
+  loadBalancers: InventoryLoadBalancerEntry[];
+  note: string;
+  servers: InventoryServerEntry[];
   totals: {
     monthly: number | null;
     servers: number | null;
@@ -119,6 +127,8 @@ export interface InventoryReport {
     loadBalancers: number | null;
     images: number | null;
   };
+  vatRate: string;
+  volumes: InventoryVolumeEntry[];
   warnings: string[];
 }
 
@@ -179,17 +189,17 @@ export async function buildInventory(
 }
 
 interface RawInventory {
-  servers: CloudServer[];
-  volumes: Volume[];
-  floatingIps: FloatingIp[];
-  primaryIps: PrimaryIp[];
-  loadBalancers: LoadBalancer[];
-  images: Image[];
-  networks: Network[];
-  firewalls: CloudFirewall[];
   certificates: Certificate[];
-  sshKeys: CloudSshKey[];
+  firewalls: CloudFirewall[];
+  floatingIps: FloatingIp[];
+  images: Image[];
+  loadBalancers: LoadBalancer[];
+  networks: Network[];
   placementGroups: PlacementGroup[];
+  primaryIps: PrimaryIp[];
+  servers: CloudServer[];
+  sshKeys: CloudSshKey[];
+  volumes: Volume[];
 }
 
 export function assembleReport(
@@ -210,11 +220,9 @@ export function assembleReport(
     const typeName = s.server_type?.name;
     const base = serverTypeMonthly(pricing, typeName, s.location?.name);
     const withBackup =
-      base === null
-        ? null
-        : s.backup_window
-          ? base + backupMonthly(pricing, base)
-          : base;
+      base !== null && s.backup_window
+        ? base + backupMonthly(pricing, base)
+        : base;
     const warnings: string[] = [];
     if (s.status === "off") {
       warnings.push("stopped server still billed (delete to stop cost)");
@@ -272,15 +280,8 @@ export function assembleReport(
         type: p.type,
         ip: p.ip,
         location: p.location?.name ?? "?",
-        assignedTo:
-          p.assignee_type === "server"
-            ? `server ${p.assignee_id}`
-            : p.assignee_type === "load_balancer"
-              ? `load balancer ${p.assignee_id}`
-              : null,
-        monthly: roundCost(
-          primaryIpMonthly(pricing, p.type, p.location?.name)
-        ),
+        assignedTo: primaryIpAssignee(p),
+        monthly: roundCost(primaryIpMonthly(pricing, p.type, p.location?.name)),
         warnings,
       };
     }),
@@ -310,7 +311,9 @@ export function assembleReport(
       name: lb.name,
       type: lb.load_balancer_type?.name ?? null,
       location: lb.location?.name ?? "?",
-      publicIpv4: lb.public_net?.enabled ? lb.public_net.ipv4?.ip ?? null : null,
+      publicIpv4: lb.public_net?.enabled
+        ? (lb.public_net.ipv4?.ip ?? null)
+        : null,
       targets: lb.targets?.length ?? 0,
       monthly: roundCost(
         loadBalancerTypeMonthly(

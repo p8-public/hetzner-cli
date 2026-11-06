@@ -161,7 +161,9 @@ export class HetznerCloudClient {
   // =========================================================================
 
   async getPricing(): Promise<CloudPricing> {
-    const { pricing } = await this.request<{ pricing: CloudPricing }>("/pricing");
+    const { pricing } = await this.request<{ pricing: CloudPricing }>(
+      "/pricing"
+    );
     return pricing;
   }
 
@@ -277,7 +279,6 @@ export class HetznerCloudClient {
     server_type: string;
     image: string;
     location?: string;
-    datacenter?: string;
     ssh_keys?: (string | number)[];
     user_data?: string;
     labels?: Labels;
@@ -820,7 +821,7 @@ export class HetznerCloudClient {
     name: string;
     assignee_type: "server";
     assignee_id?: number;
-    datacenter?: string;
+    location?: string;
     auto_delete?: boolean;
     labels?: Labels;
   }): Promise<{ primary_ip: PrimaryIp; action: CloudAction }> {

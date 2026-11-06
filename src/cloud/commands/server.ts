@@ -54,7 +54,6 @@ async function handleServerCreate(
     type: string;
     image: string;
     location?: string;
-    datacenter?: string;
     sshKey?: string[];
     userData?: string;
     labels?: string;
@@ -68,7 +67,6 @@ async function handleServerCreate(
     server_type: options.type,
     image: options.image,
     location: options.location,
-    datacenter: options.datacenter,
     ssh_keys: options.sshKey,
     user_data: options.userData,
     labels: options.labels ? parseLabels(options.labels) : undefined,
@@ -395,7 +393,6 @@ export function registerCloudServerCommands(parent: Command): void {
     .requiredOption("--type <type>", "Server type")
     .requiredOption("--image <image>", "Image to use")
     .option("--location <location>", "Location")
-    .option("--datacenter <dc>", "Datacenter")
     .option("--ssh-key <keys...>", "SSH key IDs or names")
     .option("--user-data <data>", "Cloud-init user data")
     .option("--labels <labels>", "Labels as key=value pairs (comma-separated)")

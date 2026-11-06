@@ -23,14 +23,14 @@ const pricing: CloudPricing = {
           location: "fsn1",
           price_hourly: { net: "0.0072", gross: "0.0072" },
           price_monthly: { net: "4.49", gross: "4.49" },
-          included_traffic: 21990232555520,
+          included_traffic: 21_990_232_555_520,
           price_per_tb_traffic: { net: "1.0", gross: "1.0" },
         },
         {
           location: "hel1",
           price_hourly: { net: "0.0069", gross: "0.0069" },
           price_monthly: { net: "4.29", gross: "4.29" },
-          included_traffic: 21990232555520,
+          included_traffic: 21_990_232_555_520,
           price_per_tb_traffic: { net: "1.0", gross: "1.0" },
         },
       ],
@@ -44,7 +44,7 @@ const pricing: CloudPricing = {
           location: "fsn1",
           price_hourly: { net: "0.0112", gross: "0.0112" },
           price_monthly: { net: "6.99", gross: "6.99" },
-          included_traffic: 21990232555520,
+          included_traffic: 21_990_232_555_520,
           price_per_tb_traffic: { net: "1.0", gross: "1.0" },
         },
       ],
@@ -136,20 +136,20 @@ describe("backupMonthly", () => {
 describe("trafficOverageMonthly", () => {
   const price = pricing.server_types[0].prices[0];
   it("is zero within the included allowance", () => {
-    expect(trafficOverageMonthly(price, 1024 ** 3, 21990232555520)).toBe(0);
+    expect(trafficOverageMonthly(price, 1024 ** 3, 21_990_232_555_520)).toBe(0);
   });
   it("bills per TB beyond the allowance", () => {
     const tb = 1024 ** 4;
     expect(trafficOverageMonthly(price, tb * 2, tb)).toBeCloseTo(1.0, 5);
   });
   it("returns null when outgoing traffic is unknown", () => {
-    expect(trafficOverageMonthly(price, null, 21990232555520)).toBeNull();
+    expect(trafficOverageMonthly(price, null, 21_990_232_555_520)).toBeNull();
   });
 });
 
 describe("roundCost", () => {
   it("rounds to cents", () => {
-    expect(roundCost(5.7199999)).toBe(5.72);
+    expect(roundCost(5.719_999_9)).toBe(5.72);
     expect(roundCost(null)).toBeNull();
   });
 });

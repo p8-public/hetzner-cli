@@ -264,11 +264,11 @@ export interface PrimaryIp {
   auto_delete: boolean;
   blocked: boolean;
   created: string;
-  location: Location;
   dns_ptr: { ip: string; dns_ptr: string }[];
   id: number;
   ip: string;
   labels: Labels;
+  location: Location;
   name: string;
   protection: Protection;
   type: "ipv4" | "ipv6";
@@ -396,8 +396,8 @@ export interface PlacementGroup {
 
 // Pricing (GET /pricing)
 export interface PriceAmount {
-  net: string;
   gross: string;
+  net: string;
 }
 
 /** Location-bound price entry; hourly is absent on floating IPs. */
@@ -417,18 +417,18 @@ export interface NamedTypePricing {
 }
 
 export interface IpTypePricing {
-  type: "ipv4" | "ipv6";
   prices: IpPrice[];
+  type: "ipv4" | "ipv6";
 }
 
 export interface CloudPricing {
   currency: string;
-  vat_rate: string;
-  server_types: NamedTypePricing[];
+  floating_ips: IpTypePricing[];
+  image: { price_per_gb_month: PriceAmount };
   load_balancer_types: NamedTypePricing[];
   primary_ips: IpTypePricing[];
-  floating_ips: IpTypePricing[];
-  volume: { price_per_gb_month: PriceAmount };
-  image: { price_per_gb_month: PriceAmount };
   server_backup: { percentage: string };
+  server_types: NamedTypePricing[];
+  vat_rate: string;
+  volume: { price_per_gb_month: PriceAmount };
 }

@@ -6,8 +6,16 @@ import {
   formatStatus,
   heading,
   info,
+  warning,
 } from "../shared/formatter.js";
-import type { InventoryReport } from "./inventory.js";
+import type {
+  InventoryImageEntry,
+  InventoryIpEntry,
+  InventoryLoadBalancerEntry,
+  InventoryReport,
+  InventoryServerEntry,
+  InventoryVolumeEntry,
+} from "./inventory.js";
 import { toNumber } from "./pricing.js";
 import type {
   Certificate,
@@ -28,7 +36,6 @@ import type {
   ServerType,
   Volume,
 } from "./types.js";
-import { warning } from "../shared/formatter.js";
 
 // Context
 export function formatContextList(
@@ -548,7 +555,7 @@ export function formatPrimaryIpList(ips: PrimaryIp[]): string {
     "IP",
     "Type",
     "Assignee",
-    "DC",
+    "Location",
     "Auto Delete",
   ]);
   for (const ip of ips) {
@@ -558,7 +565,7 @@ export function formatPrimaryIpList(ips: PrimaryIp[]): string {
       ip.ip,
       ip.type,
       ip.assignee_id?.toString() || "-",
-      ip.datacenter.name,
+      ip.location.name,
       ip.auto_delete ? "Yes" : "No",
     ]);
   }
@@ -576,7 +583,7 @@ export function formatPrimaryIpDetails(ip: PrimaryIp): string {
     ["IP", ip.ip],
     ["Type", ip.type],
     ["Assignee", ip.assignee_id?.toString() || "Unassigned"],
-    ["Datacenter", ip.datacenter.name],
+    ["Location", ip.location.name],
     ["Auto Delete", ip.auto_delete ? "Yes" : "No"],
     ["Blocked", ip.blocked ? colorize("Yes", "red") : "No"],
     [
@@ -896,7 +903,12 @@ export function formatPricingSummary(pricing: CloudPricing): string {
     ),
     "",
   ];
-  const serverTable = createTable(["Server Type", "Location", "Monthly (gross)", "Hourly (gross)"]);
+  const serverTable = createTable([
+    "Server Type",
+    "Location",
+    "Monthly (gross)",
+    "Hourly (gross)",
+  ]);
   for (const st of pricing.server_types) {
     for (const p of st.prices) {
       serverTable.push([
@@ -911,19 +923,33 @@ export function formatPricingSummary(pricing: CloudPricing): string {
   const lbTable = createTable(["LB Type", "Location", "Monthly (gross)"]);
   for (const lb of pricing.load_balancer_types) {
     for (const p of lb.prices) {
-      lbTable.push([lb.name, p.location, toNumber(p.price_monthly)?.toFixed(2) ?? "?"]);
+      lbTable.push([
+        lb.name,
+        p.location,
+        toNumber(p.price_monthly)?.toFixed(2) ?? "?",
+      ]);
     }
   }
   lines.push(heading("Load Balancer Types"), lbTable.toString(), "");
   const ipTable = createTable(["Kind", "Type", "Location", "Monthly (gross)"]);
   for (const ip of pricing.primary_ips) {
     for (const p of ip.prices) {
-      ipTable.push(["primary", ip.type, p.location, toNumber(p.price_monthly)?.toFixed(2) ?? "?"]);
+      ipTable.push([
+        "primary",
+        ip.type,
+        p.location,
+        toNumber(p.price_monthly)?.toFixed(2) ?? "?",
+      ]);
     }
   }
   for (const ip of pricing.floating_ips) {
     for (const p of ip.prices) {
-      ipTable.push(["floating", ip.type, p.location, toNumber(p.price_monthly)?.toFixed(2) ?? "?"]);
+      ipTable.push([
+        "floating",
+        ip.type,
+        p.location,
+        toNumber(p.price_monthly)?.toFixed(2) ?? "?",
+      ]);
     }
   }
   lines.push(heading("IPs"), ipTable.toString(), "");
@@ -941,63 +967,127 @@ export function formatPricingSummary(pricing: CloudPricing): string {
 }
 
 // Inventory
+function formatCost(value: number | null): string {
+  return value === null ? "?" : value.toFixed(2);
+}
+
+function appendTable(
+  lines: string[],
+  title: string,
+  headers: string[],
+  rows: string[][]
+): void {
+  if (rows.length === 0) {
+    return;
+  }
+  const table = createTable(headers);
+  table.push(...rows);
+  lines.push(heading(`${title} (${rows.length})`), table.toString(), "");
+}
+
+function inventoryServerRow(s: InventoryServerEntry): string[] {
+  return [
+    String(s.id),
+    s.name,
+    s.type ?? "?",
+    s.location,
+    formatStatus(s.status),
+    s.ipv4 ?? "-",
+    `${s.primaryDiskGb}G`,
+    String(s.volumeGb),
+    s.backup ? "yes" : "no",
+    formatCost(s.monthly),
+  ];
+}
+
+function inventoryVolumeRow(v: InventoryVolumeEntry): string[] {
+  return [
+    String(v.id),
+    v.name,
+    `${v.sizeGb}G`,
+    v.location,
+    v.status,
+    v.attachedTo === null ? "-" : String(v.attachedTo),
+    formatCost(v.monthly),
+  ];
+}
+
+function inventoryIpRow(ip: InventoryIpEntry): string[] {
+  return [
+    String(ip.id),
+    ip.kind,
+    ip.ip,
+    ip.location,
+    ip.assignedTo ?? "-",
+    formatCost(ip.monthly),
+  ];
+}
+
+function inventoryLoadBalancerRow(lb: InventoryLoadBalancerEntry): string[] {
+  return [
+    String(lb.id),
+    lb.name,
+    lb.type ?? "?",
+    lb.location,
+    String(lb.targets),
+    formatCost(lb.monthly),
+  ];
+}
+
+function inventoryImageRow(i: InventoryImageEntry): string[] {
+  return [
+    String(i.id),
+    i.name ?? "-",
+    i.type,
+    `${i.sizeGb}G`,
+    formatCost(i.monthly),
+  ];
+}
+
 export function formatInventoryReport(report: InventoryReport): string {
   const lines: string[] = [heading("Fleet Inventory"), ""];
-  const cost = (v: number | null) => (v === null ? "?" : v.toFixed(2));
 
-  if (report.servers.length > 0) {
-    const table = createTable([
-      "ID", "Name", "Type", "Location", "Status", "IPv4", "Disk", "Vol GB", "Bkp", "Monthly",
-    ]);
-    for (const s of report.servers) {
-      table.push([
-        String(s.id), s.name, s.type ?? "?", s.location,
-        formatStatus(s.status), s.ipv4 ?? "-",
-        `${s.primaryDiskGb}G`, String(s.volumeGb), s.backup ? "yes" : "no",
-        cost(s.monthly),
-      ]);
-    }
-    lines.push(heading(`Servers (${report.servers.length})`), table.toString(), "");
-  }
-
-  if (report.volumes.length > 0) {
-    const table = createTable(["ID", "Name", "Size", "Location", "Status", "Attached To", "Monthly"]);
-    for (const v of report.volumes) {
-      table.push([
-        String(v.id), v.name, `${v.sizeGb}G`, v.location, v.status,
-        v.attachedTo === null ? "-" : String(v.attachedTo), cost(v.monthly),
-      ]);
-    }
-    lines.push(heading(`Volumes (${report.volumes.length})`), table.toString(), "");
-  }
-
-  if (report.ips.length > 0) {
-    const table = createTable(["ID", "Kind", "IP", "Location", "Assigned To", "Monthly"]);
-    for (const ip of report.ips) {
-      table.push([
-        String(ip.id), ip.kind, ip.ip, ip.location, ip.assignedTo ?? "-", cost(ip.monthly),
-      ]);
-    }
-    lines.push(heading(`IP Addresses (${report.ips.length})`), table.toString(), "");
-  }
-
-  if (report.loadBalancers.length > 0) {
-    const table = createTable(["ID", "Name", "Type", "Location", "Targets", "Monthly"]);
-    for (const lb of report.loadBalancers) {
-      table.push([
-        String(lb.id), lb.name, lb.type ?? "?", lb.location, String(lb.targets), cost(lb.monthly),
-      ]);
-    }
-    lines.push(heading(`Load Balancers (${report.loadBalancers.length})`), table.toString(), "");
-  }
-
-  if (report.images.length > 0) {
-    const table = createTable(["ID", "Name", "Type", "Size", "Monthly"]);
-    for (const i of report.images) {
-      table.push([String(i.id), i.name ?? "-", i.type, `${i.sizeGb}G`, cost(i.monthly)]);
-    }
-    lines.push(heading(`Snapshots/Backup Images (${report.images.length})`), table.toString(), "");
-  }
+  appendTable(
+    lines,
+    "Servers",
+    [
+      "ID",
+      "Name",
+      "Type",
+      "Location",
+      "Status",
+      "IPv4",
+      "Disk",
+      "Vol GB",
+      "Bkp",
+      "Monthly",
+    ],
+    report.servers.map(inventoryServerRow)
+  );
+  appendTable(
+    lines,
+    "Volumes",
+    ["ID", "Name", "Size", "Location", "Status", "Attached To", "Monthly"],
+    report.volumes.map(inventoryVolumeRow)
+  );
+  appendTable(
+    lines,
+    "IP Addresses",
+    ["ID", "Kind", "IP", "Location", "Assigned To", "Monthly"],
+    report.ips.map(inventoryIpRow)
+  );
+  appendTable(
+    lines,
+    "Load Balancers",
+    ["ID", "Name", "Type", "Location", "Targets", "Monthly"],
+    report.loadBalancers.map(inventoryLoadBalancerRow)
+  );
+  appendTable(
+    lines,
+    "Snapshots/Backup Images",
+    ["ID", "Name", "Type", "Size", "Monthly"],
+    report.images.map(inventoryImageRow)
+  );
 
   lines.push(
     heading("Other Resources"),
@@ -1008,15 +1098,17 @@ export function formatInventoryReport(report: InventoryReport): string {
   const t = report.totals;
   lines.push(
     heading("Estimated Monthly Cost"),
-    `Servers:        ${cost(t.servers)} ${report.currency}`,
-    `Volumes:        ${cost(t.volumes)} ${report.currency}`,
-    `IP addresses:   ${cost(t.ips)} ${report.currency}`,
-    `Load balancers: ${cost(t.loadBalancers)} ${report.currency}`,
-    `Images:         ${cost(t.images)} ${report.currency}`,
-    `TOTAL:          ${cost(t.monthly)} ${report.currency} (incl. VAT, list prices)`,
+    `Servers:        ${formatCost(t.servers)} ${report.currency}`,
+    `Volumes:        ${formatCost(t.volumes)} ${report.currency}`,
+    `IP addresses:   ${formatCost(t.ips)} ${report.currency}`,
+    `Load balancers: ${formatCost(t.loadBalancers)} ${report.currency}`,
+    `Images:         ${formatCost(t.images)} ${report.currency}`,
+    `TOTAL:          ${formatCost(t.monthly)} ${report.currency} (incl. VAT, list prices)`,
     "",
     info(report.note),
-    info("Dedicated (Robot) servers: run 'hctl robot server list' — contract-priced, not in this estimate.")
+    info(
+      "Dedicated (Robot) servers: run 'hctl robot server list' — contract-priced, not in this estimate."
+    )
   );
 
   if (report.warnings.length > 0) {

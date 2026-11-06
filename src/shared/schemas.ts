@@ -570,18 +570,6 @@ interface ServerType {
 
 ${CLOUD_LOCATION}
 
-interface Datacenter {
-  id: number;
-  name: string;
-  description: string;
-  location: Location;
-  server_types: {
-    supported: number[];
-    available: number[];
-    available_for_migration: number[];
-  };
-}
-
 interface Image {
   id: number;
   type: 'system' | 'snapshot' | 'backup' | 'app';
@@ -624,7 +612,7 @@ interface CloudServer {
   };
   private_net: { network: number; ip: string; alias_ips: string[]; mac_address: string }[];
   server_type: ServerType;
-  datacenter: Datacenter;
+  location: Location;
   image: Image | null;
   iso: ISO | null;
   rescue_enabled: boolean;
@@ -732,18 +720,6 @@ interface Protection {
 
 ${CLOUD_LOCATION}
 
-interface Datacenter {
-  id: number;
-  name: string;
-  description: string;
-  location: Location;
-  server_types: {
-    supported: number[];
-    available: number[];
-    available_for_migration: number[];
-  };
-}
-
 interface PrimaryIp {
   id: number;
   name: string;
@@ -753,7 +729,7 @@ interface PrimaryIp {
   assignee_type: 'server';
   auto_delete: boolean;
   blocked: boolean;
-  datacenter: Datacenter;
+  location: Location;
   dns_ptr: { ip: string; dns_ptr: string }[];
   labels: Labels;
   protection: Protection;

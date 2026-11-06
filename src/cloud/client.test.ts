@@ -1132,8 +1132,15 @@ describe("HetznerCloudClient", () => {
         type: "ipv4",
         name: "pip1",
         assignee_type: "server",
+        location: "fsn1",
       });
       expect(result.primary_ip.id).toBe(1);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/primary_ips"),
+        expect.objectContaining({
+          body: expect.stringContaining('"location":"fsn1"'),
+        })
+      );
     });
 
     it("should delete primary IP", async () => {

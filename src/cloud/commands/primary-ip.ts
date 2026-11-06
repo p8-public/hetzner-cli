@@ -50,7 +50,10 @@ export function registerPrimaryIpCommands(parent: Command): void {
     .description("Create a primary IP")
     .requiredOption("--type <type>", "IP type (ipv4, ipv6)")
     .requiredOption("--name <name>", "Name")
-    .option("--datacenter <dc>", "Datacenter")
+    .option(
+      "--location <location>",
+      "Location, e.g. fsn1 (required unless --assignee-id is set)"
+    )
     .option("--assignee-id <id>", "Server to assign to")
     .option("--auto-delete", "Auto-delete with server")
     .action(
@@ -60,7 +63,7 @@ export function registerPrimaryIpCommands(parent: Command): void {
           options: CloudActionOptions & {
             type: string;
             name: string;
-            datacenter?: string;
+            location?: string;
             assigneeId?: string;
             autoDelete?: boolean;
           }
@@ -69,7 +72,7 @@ export function registerPrimaryIpCommands(parent: Command): void {
             type: options.type as "ipv4" | "ipv6",
             name: options.name,
             assignee_type: "server",
-            datacenter: options.datacenter,
+            location: options.location,
             assignee_id: options.assigneeId
               ? Number.parseInt(options.assigneeId, 10)
               : undefined,

@@ -319,7 +319,6 @@ hctl cloud server create                # Create a new server
   --type <type>                            #   Server type, e.g. cx22 (REQUIRED)
   --image <image>                          #   Image name or ID, e.g. ubuntu-22.04 (REQUIRED)
   --location <location>                    #   Location: fsn1, nbg1, hel1, ash, hil
-  --datacenter <dc>                        #   Datacenter (alternative to location)
   --ssh-key <keys...>                      #   SSH key IDs or names
   --user-data <data>                       #   Cloud-init user data
   --start-after-create                     #   Start server immediately (default: true)
@@ -399,9 +398,10 @@ hctl cloud primary-ip list              # List all primary IPs (alias: ls)
 hctl cloud primary-ip describe <id>     # Show primary IP details
 hctl cloud primary-ip create            # Create a primary IP
   --type <type>                            #   IP type: ipv4, ipv6 (REQUIRED)
-  --assignee-type <type>                   #   Assignee type: server (REQUIRED)
-  --datacenter <dc>                        #   Datacenter (REQUIRED)
-  --name <name>                            #   Name
+  --name <name>                            #   Name (REQUIRED)
+  --location <location>                    #   Location, e.g. fsn1 (required unless --assignee-id is set)
+  --assignee-id <id>                       #   Server to assign to
+  --auto-delete                            #   Auto-delete with server
 hctl cloud primary-ip delete <id>       # Delete a primary IP
   -y, --yes                                #   Skip confirmation
 

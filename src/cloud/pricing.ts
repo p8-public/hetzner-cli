@@ -29,10 +29,9 @@ export function toNumber(amount: PriceAmount | undefined): number | null {
  * available location when the resource's location is not priced (new
  * region, stale pricing payload).
  */
-function pickLocationPrice<T extends { location: string; price_monthly: PriceAmount }>(
-  prices: T[],
-  location: string | undefined
-): T | undefined {
+function pickLocationPrice<
+  T extends { location: string; price_monthly: PriceAmount },
+>(prices: T[], location: string | undefined): T | undefined {
   if (prices.length === 0) {
     return undefined;
   }
@@ -153,7 +152,9 @@ export function trafficOverageMonthly(
   if (overBytes === 0) {
     return 0;
   }
-  const perTb = toNumber((price as PricingServerTypePrice | undefined)?.price_per_tb_traffic);
+  const perTb = toNumber(
+    (price as PricingServerTypePrice | undefined)?.price_per_tb_traffic
+  );
   if (perTb === null) {
     return null;
   }

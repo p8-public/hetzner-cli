@@ -240,7 +240,7 @@ function makePrimaryIp(overrides: Partial<PrimaryIp> = {}): PrimaryIp {
     assignee_type: "server",
     auto_delete: false,
     blocked: false,
-    datacenter: makeDatacenter(),
+    location: makeLocation(),
     dns_ptr: [],
     labels: {},
     protection: { delete: false },
@@ -916,6 +916,8 @@ describe("Cloud Formatters", () => {
       expect(result).toContain("1.2.3.4");
       expect(result).toContain("10");
       expect(result).toContain("No"); // auto_delete
+      expect(result).toContain("Location");
+      expect(result).toContain("fsn1");
     });
 
     it("should show auto delete status", () => {
@@ -931,6 +933,8 @@ describe("Cloud Formatters", () => {
       const result = formatPrimaryIpDetails(makePrimaryIp());
       expect(result).toContain("Primary IP: my-primary-ip");
       expect(result).toContain("Unassigned");
+      expect(result).toContain("Location");
+      expect(result).toContain("fsn1");
       expect(result).toContain("No"); // auto_delete, blocked
     });
 
