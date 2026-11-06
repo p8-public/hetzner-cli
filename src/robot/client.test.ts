@@ -880,28 +880,34 @@ describe("HetznerRobotClient", () => {
 
   describe("vSwitch", () => {
     it("should list vSwitches", async () => {
+      const mockVSwitches = [
+        { id: 1234, name: "vswitch 1234", vlan: 4000, cancelled: false },
+      ];
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        text: () => Promise.resolve(JSON.stringify([{ vswitch: { id: 1 } }])),
+        text: () => Promise.resolve(JSON.stringify(mockVSwitches)),
       });
 
-      await client.listVSwitches();
+      const result = await client.listVSwitches();
 
       expect(mockFetch).toHaveBeenCalledWith(
         "https://robot-ws.your-server.de/vswitch",
         expect.any(Object)
       );
+      expect(result).toEqual(mockVSwitches);
     });
 
     it("should create vSwitch", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        text: () => Promise.resolve(JSON.stringify({ vswitch: { id: 1 } })),
+        text: () => Promise.resolve(JSON.stringify({ id: 1 })),
       });
 
-      await client.createVSwitch("my-vswitch", 4000);
+      const result = await client.createVSwitch("my-vswitch", 4000);
+
+      expect(result.id).toBe(1);
 
       expect(mockFetch).toHaveBeenCalledWith(
         "https://robot-ws.your-server.de/vswitch",
@@ -916,7 +922,7 @@ describe("HetznerRobotClient", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        text: () => Promise.resolve(JSON.stringify({ vswitch: { id: 1 } })),
+        text: () => Promise.resolve(""),
       });
 
       await client.updateVSwitch(1, "new-name", 4001);
@@ -946,7 +952,7 @@ describe("HetznerRobotClient", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        text: () => Promise.resolve(JSON.stringify({ vswitch: { id: 1 } })),
+        text: () => Promise.resolve(""),
       });
 
       await client.addServerToVSwitch(1, 123);
@@ -1572,7 +1578,7 @@ describe("HetznerRobotClient", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        text: () => Promise.resolve(JSON.stringify({ vswitch: { id: 1 } })),
+        text: () => Promise.resolve(""),
       });
 
       await client.updateVSwitch(1, "test-name");
@@ -1832,7 +1838,13 @@ describe("HetznerRobotClient", () => {
   describe("vSwitch - additional coverage", () => {
     it("should get vSwitch by ID", async () => {
       const mockVSwitch = {
-        vswitch: { id: 42, name: "my-vswitch", vlan: 4000 },
+        id: 42,
+        name: "my-vswitch",
+        vlan: 4000,
+        cancelled: false,
+        server: [],
+        subnet: [],
+        cloud_network: [],
       };
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -2148,7 +2160,7 @@ describe("HetznerRobotClient", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        text: () => Promise.resolve(JSON.stringify({ vswitch: { id: 1 } })),
+        text: () => Promise.resolve(""),
       });
 
       await client.updateVSwitch(1);

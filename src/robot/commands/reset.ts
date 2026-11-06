@@ -65,7 +65,7 @@ export function registerResetCommands(parent: Command): void {
           let resetType = options.type;
 
           if (options.interactive) {
-            resetType = (await select({
+            resetType = await select({
               message: "Select reset type:",
               choices: [
                 { value: "sw", name: "Software reset (ACPI) - Recommended" },
@@ -74,7 +74,7 @@ export function registerResetCommands(parent: Command): void {
                 { value: "power_long", name: "Long power cycle (10+ seconds)" },
                 { value: "man", name: "Manual reset (technician)" },
               ],
-            })) as ResetType;
+            });
           }
 
           if (!options.yes) {

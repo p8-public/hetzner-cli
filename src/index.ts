@@ -138,6 +138,7 @@ export type {
   VSwitchCloudNetwork,
   VSwitchServer,
   VSwitchSubnet,
+  VSwitchSummary,
   WindowsConfig,
   // Wake on LAN
   Wol,

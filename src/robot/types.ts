@@ -212,6 +212,13 @@ export interface FirewallTemplate {
 }
 
 // vSwitch Types
+// Unlike most Robot resources, vSwitch responses are not wrapped in a
+// resource-named key. The list endpoint returns summaries only.
+export type VSwitchSummary = Pick<
+  VSwitch,
+  "cancelled" | "id" | "name" | "vlan"
+>;
+
 export interface VSwitch {
   cancelled: boolean;
   cloud_network: VSwitchCloudNetwork[];

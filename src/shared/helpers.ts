@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { confirm } from "@inquirer/prompts";
+import type { Command, OptionValues } from "commander";
 
 import { HetznerRobotClient } from "../robot/client.js";
 import { requireCredentials } from "./config.js";
@@ -31,11 +32,29 @@ export function handleActionError(err: unknown): never {
   process.exit(1);
 }
 
+/**
+ * Split the arguments Commander passes to an action handler, which are
+ * `(...positionals, localOptions, command)`.
+ *
+ * Flags such as --json are declared on ancestor commands, so they are missing
+ * from `localOptions`. The returned `handlerArgs` carry the merged options in
+ * that slot instead.
+ */
+export function resolveActionArgs(args: unknown[]): {
+  handlerArgs: unknown[];
+  options: OptionValues;
+} {
+  const command = args.at(-1) as Command;
+  const options = command.optsWithGlobals();
+  return { handlerArgs: [...args.slice(0, -2), options], options };
+}
+
 export function asyncAction<T extends unknown[]>(
   fn: (client: HetznerRobotClient, ...args: T) => Promise<void>
-): (...args: [...T, ActionOptions]) => Promise<void> {
+): (...args: [...T, ...unknown[]]) => Promise<void> {
   return async (...args) => {
-    const options = args.at(-1) as ActionOptions;
+    const { handlerArgs, options: merged } = resolveActionArgs(args);
+    const options: ActionOptions = merged;
     try {
       const { user } = options;
       let password = options.password;
@@ -56,7 +75,7 @@ export function asyncAction<T extends unknown[]>(
         apiClient = new HetznerRobotClient(creds.user, creds.password);
       }
 
-      await fn(apiClient, ...(args.slice(0, -1) as unknown as T));
+      await fn(apiClient, ...(handlerArgs as T));
     } catch (error) {
       handleActionError(error);
     }

@@ -32,6 +32,7 @@ import type {
   Subnet,
   Traffic,
   VSwitch,
+  VSwitchSummary,
   Wol,
 } from "./types.js";
 
@@ -498,27 +499,18 @@ export function formatFirewallTemplateList(
   return table.toString();
 }
 
-export function formatVSwitchList(vswitches: { vswitch: VSwitch }[]): string {
+export function formatVSwitchList(vswitches: VSwitchSummary[]): string {
   if (vswitches.length === 0) {
     return info("No vSwitches found.");
   }
 
-  const table = createTable([
-    "ID",
-    "Name",
-    "VLAN",
-    "Servers",
-    "Subnets",
-    "Cancelled",
-  ]);
+  const table = createTable(["ID", "Name", "VLAN", "Cancelled"]);
 
-  for (const { vswitch } of vswitches) {
+  for (const vswitch of vswitches) {
     table.push([
       vswitch.id.toString(),
       vswitch.name,
       vswitch.vlan.toString(),
-      vswitch.server.length.toString(),
-      vswitch.subnet.length.toString(),
       vswitch.cancelled ? colorize("Yes", "red") : "No",
     ]);
   }

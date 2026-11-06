@@ -1,3 +1,4 @@
+import { Command } from "commander";
 import {
   afterEach,
   beforeEach,
@@ -33,6 +34,20 @@ import {
   resolveIdOrName,
 } from "./helpers.js";
 
+/** Run an action the way the CLI does: --json on root, --token on the group. */
+async function runCloud(
+  action: Parameters<Command["action"]>[0],
+  argv: string[]
+): Promise<void> {
+  const program = new Command().option("--json");
+  program
+    .command("cloud")
+    .option("--token <token>")
+    .command("show [id]")
+    .action(action);
+  await program.parseAsync(["cloud", "show", ...argv], { from: "user" });
+}
+
 const mockResolveToken = vi.mocked(resolveToken);
 const mockHetznerCloudClient = vi.mocked(HetznerCloudClient);
 
@@ -57,15 +72,18 @@ describe("helpers", () => {
       // biome-ignore lint/complexity/useArrowFunction: must use regular function for constructor mock
       mockHetznerCloudClient.mockImplementation(function () {
         return mockClient;
-      } as unknown as () => HetznerCloudClient);
+      });
 
       const fn = vi.fn().mockResolvedValue(undefined);
-      const action = cloudAction(fn);
-      await action({ token: "flag-token" });
+      await runCloud(cloudAction(fn), ["--token", "flag-token", "--json"]);
 
       expect(mockResolveToken).toHaveBeenCalledWith("flag-token");
       expect(mockHetznerCloudClient).toHaveBeenCalledWith("test-token");
-      expect(fn).toHaveBeenCalledWith(mockClient);
+      expect(fn).toHaveBeenCalledWith(
+        mockClient,
+        undefined,
+        expect.objectContaining({ json: true, token: "flag-token" })
+      );
     });
 
     it("should pass through additional arguments before options", async () => {
@@ -74,21 +92,19 @@ describe("helpers", () => {
       // biome-ignore lint/complexity/useArrowFunction: must use regular function for constructor mock
       mockHetznerCloudClient.mockImplementation(function () {
         return mockClient;
-      } as unknown as () => HetznerCloudClient);
+      });
 
       const fn = vi.fn().mockResolvedValue(undefined);
-      const action = cloudAction<[string, number]>(fn);
-      await action("arg1", 42, { token: "tok" });
+      await runCloud(cloudAction<[string]>(fn), ["arg1"]);
 
-      expect(fn).toHaveBeenCalledWith(mockClient, "arg1", 42);
+      expect(fn).toHaveBeenCalledWith(mockClient, "arg1", expect.any(Object));
     });
 
     it("should handle Error and call process.exit(1)", async () => {
       mockResolveToken.mockRejectedValue(new Error("Token not found"));
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(vi.fn());
 
-      const action = cloudAction(vi.fn());
-      await action({});
+      await runCloud(cloudAction(vi.fn()), []);
 
       expect(consoleSpy).toHaveBeenCalledWith("ERROR: Token not found");
       expect(mockExit).toHaveBeenCalledWith(1);
@@ -99,12 +115,11 @@ describe("helpers", () => {
       // biome-ignore lint/complexity/useArrowFunction: must use regular function for constructor mock
       mockHetznerCloudClient.mockImplementation(function () {
         return {} as HetznerCloudClient;
-      } as unknown as () => HetznerCloudClient);
+      });
 
       const exitErr = new Error("ExitPromptError");
       exitErr.name = "ExitPromptError";
-      const action = cloudAction(vi.fn().mockRejectedValue(exitErr));
-      await action({});
+      await runCloud(cloudAction(vi.fn().mockRejectedValue(exitErr)), []);
 
       expect(mockExit).toHaveBeenCalledWith(0);
     });
@@ -113,8 +128,7 @@ describe("helpers", () => {
       mockResolveToken.mockRejectedValue("string error");
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(vi.fn());
 
-      const action = cloudAction(vi.fn());
-      await action({});
+      await runCloud(cloudAction(vi.fn()), []);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         "ERROR: An unknown error occurred"

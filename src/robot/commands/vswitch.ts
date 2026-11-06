@@ -28,9 +28,7 @@ export function registerVSwitchCommands(parent: Command): void {
     .description("Get vSwitch details")
     .action(
       asyncAction(async (client, vswitchId: string, options: ActionOptions) => {
-        const { vswitch: vs } = await client.getVSwitch(
-          Number.parseInt(vswitchId, 10)
-        );
+        const vs = await client.getVSwitch(Number.parseInt(vswitchId, 10));
         output(vs, formatVSwitchDetails, options);
       })
     );
@@ -40,10 +38,7 @@ export function registerVSwitchCommands(parent: Command): void {
     .description("Create a new vSwitch")
     .action(
       asyncAction(async (client, name: string, vlan: string) => {
-        const { vswitch: vs } = await client.createVSwitch(
-          name,
-          Number.parseInt(vlan, 10)
-        );
+        const vs = await client.createVSwitch(name, Number.parseInt(vlan, 10));
         console.log(success(`vSwitch created: ID ${vs.id}`));
       })
     );

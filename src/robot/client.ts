@@ -32,6 +32,7 @@ import type {
   Traffic,
   VncConfig,
   VSwitch,
+  VSwitchSummary,
   WindowsConfig,
   Wol,
 } from "./types.js";
@@ -747,29 +748,22 @@ export class HetznerRobotClient {
   // vSwitch
   // =========================================================================
 
-  async listVSwitches(): Promise<{ vswitch: VSwitch }[]> {
-    return await this.request<{ vswitch: VSwitch }[]>("/vswitch");
+  async listVSwitches(): Promise<VSwitchSummary[]> {
+    return await this.request<VSwitchSummary[]>("/vswitch");
   }
 
-  async getVSwitch(id: number): Promise<{ vswitch: VSwitch }> {
-    return await this.request<{ vswitch: VSwitch }>(`/vswitch/${id}`);
+  async getVSwitch(id: number): Promise<VSwitch> {
+    return await this.request<VSwitch>(`/vswitch/${id}`);
   }
 
-  async createVSwitch(
-    name: string,
-    vlan: number
-  ): Promise<{ vswitch: VSwitch }> {
-    return await this.request<{ vswitch: VSwitch }>("/vswitch", {
+  async createVSwitch(name: string, vlan: number): Promise<VSwitch> {
+    return await this.request<VSwitch>("/vswitch", {
       method: "POST",
       body: this.encodeParams({ name, vlan }),
     });
   }
 
-  async updateVSwitch(
-    id: number,
-    name?: string,
-    vlan?: number
-  ): Promise<{ vswitch: VSwitch }> {
+  async updateVSwitch(id: number, name?: string, vlan?: number): Promise<void> {
     const params: Record<string, string | number | undefined> = {};
     if (name) {
       params.name = name;
@@ -778,7 +772,7 @@ export class HetznerRobotClient {
       params.vlan = vlan;
     }
 
-    return await this.request<{ vswitch: VSwitch }>(`/vswitch/${id}`, {
+    await this.request<Record<string, never>>(`/vswitch/${id}`, {
       method: "POST",
       body: this.encodeParams(params),
     });
@@ -799,14 +793,11 @@ export class HetznerRobotClient {
   async addServerToVSwitch(
     vswitchId: number,
     serverIpOrNumber: string | number
-  ): Promise<{ vswitch: VSwitch }> {
-    return await this.request<{ vswitch: VSwitch }>(
-      `/vswitch/${vswitchId}/server`,
-      {
-        method: "POST",
-        body: this.encodeParams({ server: String(serverIpOrNumber) }),
-      }
-    );
+  ): Promise<void> {
+    await this.request<Record<string, never>>(`/vswitch/${vswitchId}/server`, {
+      method: "POST",
+      body: this.encodeParams({ server: String(serverIpOrNumber) }),
+    });
   }
 
   async removeServerFromVSwitch(

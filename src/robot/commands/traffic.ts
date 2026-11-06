@@ -42,7 +42,7 @@ export function registerTrafficCommands(parent: Command): void {
             options.subnet || [],
             from,
             to,
-            options.type as "day" | "month" | "year"
+            options.type
           );
 
           output(trafficData, formatTraffic, options);

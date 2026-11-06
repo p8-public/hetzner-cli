@@ -273,7 +273,8 @@ export async function validateCloudToken(token: string): Promise<void> {
       normalizedMessage.includes("unauthorized")
     ) {
       throw new Error(
-        "Hetzner Cloud token validation failed: api.hetzner.cloud rejected this token. Create a project API token in the Hetzner Cloud Console; Robot credentials, console logins, Cloudflare tokens, DNS tokens, and R2 tokens will not work."
+        "Hetzner Cloud token validation failed: api.hetzner.cloud rejected this token. Create a project API token in the Hetzner Cloud Console; Robot credentials, console logins, Cloudflare tokens, DNS tokens, and R2 tokens will not work.",
+        { cause: error }
       );
     }
     if (
@@ -281,9 +282,12 @@ export async function validateCloudToken(token: string): Promise<void> {
       normalizedMessage.includes("forbidden")
     ) {
       throw new Error(
-        "Hetzner Cloud token validation failed: this token authenticated but cannot read Cloud API resources."
+        "Hetzner Cloud token validation failed: this token authenticated but cannot read Cloud API resources.",
+        { cause: error }
       );
     }
-    throw new Error(`Hetzner Cloud token validation failed: ${message}`);
+    throw new Error(`Hetzner Cloud token validation failed: ${message}`, {
+      cause: error,
+    });
   }
 }

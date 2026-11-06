@@ -1,3 +1,4 @@
+import { Command } from "commander";
 import {
   afterEach,
   beforeEach,
@@ -32,6 +33,23 @@ import { confirm } from "@inquirer/prompts";
 import { HetznerRobotClient } from "../robot/client.js";
 import { asyncAction, confirmAction, output } from "./helpers.js";
 
+/** Run an action the way the CLI does: real parsing, with root-level flags. */
+async function runCli(
+  action: Parameters<Command["action"]>[0],
+  argv: string[]
+): Promise<void> {
+  const program = new Command()
+    .option("-u, --user <username>")
+    .option("-p, --password <password>")
+    .option("--json");
+  program
+    .command("thing")
+    .command("show [id]")
+    .option("-y, --yes")
+    .action(action);
+  await program.parseAsync(argv, { from: "user" });
+}
+
 const mockConfirm = vi.mocked(confirm);
 const mockHetznerRobotClient = vi.mocked(HetznerRobotClient);
 
@@ -55,25 +73,67 @@ describe("shared/helpers", () => {
       // biome-ignore lint/complexity/useArrowFunction: must use regular function for constructor mock
       mockHetznerRobotClient.mockImplementation(function () {
         return mockClient;
-      } as unknown as () => HetznerRobotClient);
+      });
 
       const fn = vi.fn().mockResolvedValue(undefined);
-      const action = asyncAction(fn);
-      await action({ user: "flag-user", password: "flag-pass" });
+      await runCli(asyncAction(fn), [
+        "-u",
+        "flag-user",
+        "-p",
+        "flag-pass",
+        "thing",
+        "show",
+      ]);
 
       expect(mockHetznerRobotClient).toHaveBeenCalledWith(
         "flag-user",
         "flag-pass"
       );
-      expect(fn).toHaveBeenCalledWith(mockClient);
+      expect(fn).toHaveBeenCalledWith(
+        mockClient,
+        undefined,
+        expect.objectContaining({ user: "flag-user" })
+      );
+    });
+
+    it("should merge root and local options for the handler", async () => {
+      const fn = vi.fn().mockResolvedValue(undefined);
+      await runCli(asyncAction(fn), [
+        "thing",
+        "show",
+        "42",
+        "--json",
+        "--yes",
+        "-u",
+        "u",
+        "-p",
+        "p",
+      ]);
+
+      expect(fn).toHaveBeenCalledWith(
+        expect.anything(),
+        "42",
+        expect.objectContaining({ json: true, yes: true })
+      );
     });
 
     it("should pass through additional arguments before options", async () => {
       const fn = vi.fn().mockResolvedValue(undefined);
-      const action = asyncAction<[string, number]>(fn);
-      await action("arg1", 42, { user: "u", password: "p" });
+      await runCli(asyncAction<[string]>(fn), [
+        "-u",
+        "u",
+        "-p",
+        "p",
+        "thing",
+        "show",
+        "arg1",
+      ]);
 
-      expect(fn).toHaveBeenCalledWith(expect.any(Object), "arg1", 42);
+      expect(fn).toHaveBeenCalledWith(
+        expect.any(Object),
+        "arg1",
+        expect.any(Object)
+      );
     });
 
     it("should handle Error from fn and call process.exit(1)", async () => {
@@ -81,7 +141,7 @@ describe("shared/helpers", () => {
       const action = asyncAction(
         vi.fn().mockRejectedValue(new Error("Action failed"))
       );
-      await action({ user: "u", password: "p" });
+      await runCli(action, ["-u", "u", "-p", "p", "thing", "show"]);
 
       expect(consoleSpy).toHaveBeenCalledWith("ERROR: Action failed");
       expect(mockExit).toHaveBeenCalledWith(1);
@@ -91,7 +151,7 @@ describe("shared/helpers", () => {
       const exitErr = new Error("ExitPromptError");
       exitErr.name = "ExitPromptError";
       const action = asyncAction(vi.fn().mockRejectedValue(exitErr));
-      await action({ user: "u", password: "p" });
+      await runCli(action, ["-u", "u", "-p", "p", "thing", "show"]);
 
       expect(mockExit).toHaveBeenCalledWith(0);
     });
@@ -99,7 +159,7 @@ describe("shared/helpers", () => {
     it("should handle unknown error type", async () => {
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(vi.fn());
       const action = asyncAction(vi.fn().mockRejectedValue("string error"));
-      await action({ user: "u", password: "p" });
+      await runCli(action, ["-u", "u", "-p", "p", "thing", "show"]);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         "ERROR: An unknown error occurred"

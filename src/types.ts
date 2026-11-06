@@ -47,6 +47,7 @@ export type {
   VSwitchCloudNetwork,
   VSwitchServer,
   VSwitchSubnet,
+  VSwitchSummary,
   WindowsConfig,
   Wol,
 } from "./robot/types.js";

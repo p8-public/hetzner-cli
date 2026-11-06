@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { handleActionError } from "../shared/helpers.js";
+import { handleActionError, resolveActionArgs } from "../shared/helpers.js";
 import { HetznerCloudClient } from "./client.js";
 import { resolveToken } from "./context.js";
 
@@ -69,13 +69,14 @@ export async function resolveIdOrName(
  */
 export function cloudAction<T extends unknown[]>(
   fn: (client: HetznerCloudClient, ...args: T) => Promise<void>
-): (...args: [...T, CloudActionOptions]) => Promise<void> {
+): (...args: [...T, ...unknown[]]) => Promise<void> {
   return async (...args) => {
-    const options = args.at(-1) as CloudActionOptions;
+    const { handlerArgs, options: merged } = resolveActionArgs(args);
+    const options: CloudActionOptions = merged;
     try {
       const token = await resolveToken(options.token);
       const client = new HetznerCloudClient(token);
-      await fn(client, ...(args.slice(0, -1) as unknown as T));
+      await fn(client, ...(handlerArgs as T));
     } catch (error) {
       handleActionError(error);
     }

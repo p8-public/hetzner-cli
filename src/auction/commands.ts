@@ -154,6 +154,11 @@ function buildFetchOptions(options: AuctionSourceOptions): AuctionFetchOptions {
   return options.direct ? { source: "direct" } : {};
 }
 
+/** Status messages stay off stdout in JSON mode so it remains parseable. */
+function statusLog(options: { json?: boolean }): (message: string) => void {
+  return options.json ? console.error : console.log;
+}
+
 function maybeWarnAboutLocalCache(
   metadata: AuctionFetchResult["metadata"],
   options: { json?: boolean }
@@ -232,7 +237,8 @@ function isSuspiciousEmptyPayload(
 function fetchAndDiff(
   db: Database.Database,
   servers: AuctionServer[],
-  currency: string
+  currency: string,
+  options: { json?: boolean }
 ): SnapshotDiffResult | null {
   const previous = getLatestSnapshot(db, currency);
   if (!previous) {
@@ -243,7 +249,7 @@ function fetchAndDiff(
       return null;
     }
     const snapshot = saveSnapshot(db, servers, currency);
-    console.log(
+    statusLog(options)(
       success(
         `Initial snapshot saved (${snapshot.serverCount} servers, snapshot #${snapshot.id})`
       )
@@ -294,7 +300,7 @@ async function pollOnce(
     allowLocalFallback: false,
     source: options.source,
   });
-  const result = fetchAndDiff(db, servers, currency);
+  const result = fetchAndDiff(db, servers, currency, options);
   if (!result) {
     return;
   }
@@ -342,6 +348,14 @@ export function registerAuctionCommands(parent: Command): void {
         "Fetches the current public auction inventory from the hosted auction cache by default and filters/sorts client-side.\n" +
         "Typical ranges: 30-450 EUR/mo, 32-1024 GB RAM, NVMe/SATA/HDD, datacenters in FSN/HEL/NBG."
     );
+
+  // The root command also declares --json and consumes the flag wherever it
+  // appears, so copy it onto the subcommand that is about to run.
+  auction.hook("preAction", (_auction, actionCommand) => {
+    if (actionCommand.optsWithGlobals().json) {
+      actionCommand.setOptionValue("json", true);
+    }
+  });
 
   auction
     .command("list")
@@ -422,7 +436,7 @@ export function registerAuctionCommands(parent: Command): void {
         const {
           data: { server: servers },
           metadata,
-        } = await fetchAuctionDataWithCache(options.currency as "EUR" | "USD", {
+        } = await fetchAuctionDataWithCache(options.currency, {
           ...buildFetchOptions(options),
           allowLocalFallback: true,
         });
@@ -480,7 +494,7 @@ export function registerAuctionCommands(parent: Command): void {
         const {
           data: { server: servers },
           metadata,
-        } = await fetchAuctionDataWithCache(options.currency as "EUR" | "USD", {
+        } = await fetchAuctionDataWithCache(options.currency, {
           ...buildFetchOptions(options),
           allowLocalFallback: true,
         });
@@ -567,7 +581,7 @@ export function registerAuctionCommands(parent: Command): void {
           if (!options.json) {
             console.log(formatAuctionFetchMetadata(metadata));
           }
-          const result = fetchAndDiff(db, servers, currency);
+          const result = fetchAndDiff(db, servers, currency, options);
           if (!result) {
             return;
           }
@@ -639,7 +653,7 @@ export function registerAuctionCommands(parent: Command): void {
         process.once("SIGINT", requestShutdown);
         process.once("SIGTERM", requestShutdown);
 
-        console.log(
+        statusLog(options)(
           info(
             `Watching auction (${currency}, every ${intervalMin}min). Press Ctrl+C to stop.`
           )

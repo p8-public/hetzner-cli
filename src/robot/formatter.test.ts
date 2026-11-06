@@ -654,17 +654,7 @@ describe("Formatter Module", () => {
 
     it("should format vSwitch list", () => {
       const vswitches = [
-        {
-          vswitch: {
-            id: 1,
-            name: "my-vswitch",
-            vlan: 4000,
-            cancelled: false,
-            server: [],
-            subnet: [],
-            cloud_network: [],
-          },
-        },
+        { id: 1, name: "my-vswitch", vlan: 4000, cancelled: false },
       ];
 
       const result = formatVSwitchList(vswitches);
@@ -1683,17 +1673,7 @@ describe("Formatter Module", () => {
   describe("formatVSwitchList ternary branches", () => {
     it("should show cancelled vSwitch", () => {
       const vswitches = [
-        {
-          vswitch: {
-            id: 10,
-            name: "cancelled-vswitch",
-            vlan: 4001,
-            cancelled: true,
-            server: [],
-            subnet: [],
-            cloud_network: [],
-          },
-        },
+        { id: 10, name: "cancelled-vswitch", vlan: 4001, cancelled: true },
       ];
 
       const result = formatVSwitchList(vswitches);

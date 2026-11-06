@@ -278,7 +278,9 @@ interface VSwitch {
   server: VSwitchServer[];
   subnet: VSwitchSubnet[];
   cloud_network: VSwitchCloudNetwork[];
-}`;
+}
+
+type VSwitchSummary = Pick<VSwitch, 'id' | 'name' | 'vlan' | 'cancelled'>;`;
 
 const ROBOT_STORAGEBOX = `\
 interface StorageBox {
@@ -1032,7 +1034,7 @@ export const outputSchemas: Record<string, string> = {
   "firewall template get": `${ROBOT_FIREWALL_TEMPLATE}\n\ntype Output = { firewall_template: FirewallTemplate }[];`,
 
   // --- vswitch ---
-  "vswitch list": `${ROBOT_VSWITCH}\n\ntype Output = { vswitch: VSwitch }[];`,
+  "vswitch list": `${ROBOT_VSWITCH}\n\ntype Output = VSwitchSummary[];`,
   "vswitch get": `${ROBOT_VSWITCH}\n\ntype Output = VSwitch;`,
 
   // --- storagebox ---

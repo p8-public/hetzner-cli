@@ -183,7 +183,8 @@ function parseStoredServer(raw: string): AuctionServer {
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     throw new Error(
-      `Stored auction server payload is not valid JSON (schema drift or DB corruption): ${detail}`
+      `Stored auction server payload is not valid JSON (schema drift or DB corruption): ${detail}`,
+      { cause: err }
     );
   }
 }
